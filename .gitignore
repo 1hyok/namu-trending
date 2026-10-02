@@ -1,0 +1,5 @@
+/scripts/launchd/
+*.log
+*.rotated
+.DS_Store
+/private/

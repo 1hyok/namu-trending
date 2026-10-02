@@ -3,7 +3,7 @@
 #
 #   scripts/install_namu_snapshot_launchd.sh            설치(또는 재설치) 후 검증
 #   scripts/install_namu_snapshot_launchd.sh --force    내용이 같아도 강제로 재등록
-#   scripts/install_namu_snapshot_launchd.sh --emit     저장소 안 참조본(scripts/launchd/)만 갱신
+#   scripts/install_namu_snapshot_launchd.sh --emit     설치할 plist를 표준 출력으로만 표시
 #   scripts/install_namu_snapshot_launchd.sh --status   지금 상태만 본다
 #
 # plist는 현재 체크아웃 경로로 생성한다. 저장소를 옮기면 새 위치에서 다시 설치한다.
@@ -28,7 +28,6 @@ if [[ -n $gitdir && -n $commondir && $gitdir != $commondir ]]; then
 fi
 SCRIPT=$REPO/scripts/namu_ranking_snapshot.sh
 PLIST=$HOME/Library/LaunchAgents/$LABEL.plist
-REF=$REPO/scripts/launchd/$LABEL.plist
 LOG=$HOME/Library/Logs/namu-ranking-snapshot.log
 DOMAIN=gui/$(id -u)
 
@@ -66,15 +65,12 @@ case ${1:-install} in
   --status)
     ;;
   --emit)
-    mkdir -p "${REF:h}"
-    emit_plist > "$REF" || { print -u2 "plist 생성 실패"; exit 1 }
-    plutil -lint "$REF" || exit 1
-    print "참조본 갱신: $REF"
-    exit 0
+    emit_plist
+    exit $?
     ;;
   install|--force|"")
     [[ -x $SCRIPT ]] || { print -u2 "스크립트가 없거나 실행 권한이 없다: $SCRIPT"; exit 1 }
-    mkdir -p "${PLIST:h}" "${REF:h}" "${LOG:h}"
+    mkdir -p "${PLIST:h}" "${LOG:h}"
     emit_plist > "$PLIST.new" || { print -u2 "plist 생성 실패"; exit 1 }
     plutil -lint "$PLIST.new" || exit 1
 
@@ -84,11 +80,9 @@ case ${1:-install} in
        && cmp -s "$PLIST.new" "$PLIST" \
        && launchctl print "$DOMAIN/$LABEL" >/dev/null 2>&1; then
       rm -f "$PLIST.new"
-      cp "$PLIST" "$REF"
       print "이미 같은 내용으로 적재돼 있다. 재등록하지 않는다 (강제하려면 --force)."
     else
       mv "$PLIST.new" "$PLIST"
-      cp "$PLIST" "$REF"
       launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null   # 안 떠 있으면 실패하는 게 정상이다
       # bootout 은 비동기다. 빠지기를 안 기다리고 bootstrap 하면 "Input/output error" 로 튕긴다.
       for _ in {1..50}; do
