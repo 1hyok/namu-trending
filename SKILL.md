@@ -26,9 +26,9 @@ description: 나무위키 실시간 검색어(실검) 상위 10개를 받아 각
 
 체크아웃이 없거나 스크립트를 돌릴 수 없는 환경(샌드박스 등)에서:
 
-1. `https://search.namu.wiki/api/ranking?t=<YYYYMMDD-HHMM>` 을 WebFetch 로 받는다(프롬프트 "JSON 배열을 그대로 돌려줘"). `t=` 는 캐시 우회용이다.
-2. 403 이나 차단 페이지가 오면 같은 요청을 되풀이하지 않는다. 이 저장소를 자동 수집에 연결해 운영하고 있다면 그 체크아웃에서 안전하게 동기화한 뒤 `ranking-latest.json`을 읽고, 위와 같은 3시간 기준으로 쓴다.
-3. 어느 쪽도 안 되면 "수집 실패 (API 403, 스냅샷 없음)" 한 줄만 쓰고 끝낸다. curl 이나 다른 사이트의 실검으로 대체하지 않는다.
+1. 원격 저장소 `1hyok/namu-trending-private` 의 `main` 에 있는 `ranking-latest.json` 을 읽는다(`gh api repos/1hyok/namu-trending-private/contents/ranking-latest.json` 등). 위와 같은 3시간 기준으로 쓴다.
+2. 순위를 직접 받으려 하지 않는다. 옛 API `search.namu.wiki` 는 2026-10-04 에 없어졌고, 지금 실검은 브라우저가 페이지를 그려야만 나온다. WebFetch·curl 이나 다른 사이트의 실검으로 대체하지 않는다.
+3. 스냅샷이 없거나 낡았으면 "수집 실패 (스냅샷 HH:MM)" 한 줄만 쓰고 끝낸다.
 
 ## 3. 키워드별 이유 찾기
 
@@ -54,6 +54,6 @@ description: 나무위키 실시간 검색어(실검) 상위 10개를 받아 각
 
 ## 5. 자동 수집과 로그
 
-예약 수집은 `scripts/install_namu_snapshot_launchd.sh` 로 설치한다(README 의 "예약 실행"). 돌았는지는 로그 `~/Library/Logs/namu-ranking-snapshot.log` 의 `START`·`RESULT` 줄로 본다. `RESULT` 의 종류와 뜻은 README 의 표에 있다. `launchctl print` 의 `runs` 값은 로드 이후 횟수라 근거가 못 된다.
+예약 수집은 항상 켜진 윈도우 PC 의 작업 스케줄러 `NamuRankingSnapshot` 이 한다(README 의 "예약 실행"). 돌았는지는 그 기기의 `%USERPROFILE%\.namu-trending\namu-ranking-snapshot.log` 의 `START`·`RESULT` 줄과 원격 `main` 의 스냅샷 커밋 시각으로 본다. 작업 기록의 결과 코드는 창을 숨기는 감싸기 때문에 늘 0 이라 근거가 못 된다. 맥에서 손으로 돌린 실행은 `~/Library/Logs/namu-ranking-snapshot.log` 에 남는다.
 
 기존 자동 수집은 원격 브랜치에 스냅샷 커밋을 만든다. 별도 임시 인덱스를 사용하며 사용자의 다른 수정 파일을 그 커밋에 포함하지 않는다. 로컬 동기화 여부와 실행 결과는 로그에서 확인한다.

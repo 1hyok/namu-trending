@@ -41,7 +41,7 @@ plistlib.dump({
     "WorkingDirectory": repo,
     "EnvironmentVariables": {
         # launchd 는 PATH 를 /usr/bin:/bin:/usr/sbin:/sbin 으로만 준다. 로그인 셸이 아니므로
-        # ~/.zprofile 도 안 읽는다. git·python3·curl 이 전부 /usr/bin 에 있어 이대로 충분하다.
+        # ~/.zprofile 도 안 읽는다. node 는 진입 스크립트가 Homebrew 경로에서 직접 찾는다.
         "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
         "HOME": home,
         "LANG": "en_US.UTF-8",
