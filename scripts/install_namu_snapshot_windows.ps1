@@ -12,7 +12,6 @@ $ErrorActionPreference = 'Stop'
 
 $TaskName = 'NamuRankingSnapshot'
 $Repo = Split-Path -Parent $PSScriptRoot
-$Script = Join-Path $PSScriptRoot 'namu_ranking_snapshot.mjs'
 $Log = if ($env:NAMU_LOG) { $env:NAMU_LOG } else { Join-Path $HOME '.namu-trending\namu-ranking-snapshot.log' }
 
 function Show-Status {
@@ -33,14 +32,14 @@ $commonDir = (git -C $Repo rev-parse --path-format=absolute --git-common-dir).Tr
 if ($gitDir -ne $commonDir) { Write-Error "여기는 연결된 워크트리다: $Repo. 본 체크아웃에서 설치해야 한다."; exit 1 }
 
 # node 경로를 작업에 박지 않는다. winget 포터블 Node 는 버전 폴더(node-v26.7.0-win-x64)에 깔려
-# 업그레이드하면 옛 경로가 사라지고 예약이 조용히 실패한다. 실행할 때 cmd 가 사용자 PATH 로 찾게 한다.
-# 특정 node 를 쓰려면 NAMU_NODE 로 경로를 준다.
-$null = Get-Command node -ErrorAction Stop
-$Node = if ($env:NAMU_NODE) { "`"$env:NAMU_NODE`"" } else { 'node' }
+# 업그레이드하면 옛 경로가 사라지고 예약이 조용히 실패한다. 실행할 때마다 진입점
+# namu_ranking_snapshot.ps1 이 node 를 찾고, 못 찾으면 로그에 RESULT fail stage=node 를 남긴다.
+$Entry = Join-Path $PSScriptRoot 'namu_ranking_snapshot.ps1'
 $Conhost = Join-Path $env:SystemRoot 'System32\conhost.exe'
-$Cmd = Join-Path $env:SystemRoot 'System32\cmd.exe'
+$PowerShell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
 
-$action = New-ScheduledTaskAction -Execute $Conhost -Argument "--headless `"$Cmd`" /d /c $Node `"$Script`" --scheduled" -WorkingDirectory $Repo
+$action = New-ScheduledTaskAction -Execute $Conhost -WorkingDirectory $Repo `
+  -Argument "--headless `"$PowerShell`" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$Entry`" --scheduled"
 # 여러 아침 슬롯을 두어 한 번 놓쳐도 보완한다. 시각은 이 기기의 로컬 시간이다.
 $triggers = @(
   (New-ScheduledTaskTrigger -Daily -At '06:00'),
